@@ -1,0 +1,68 @@
+---
+title: "Data Science I: Lab 1"
+author: "Ceyda Durmaz"
+date: "09/30/2020"
+output:
+  prettydoc::html_pretty:
+    theme: leonids
+    highlight: github
+editor_options: 
+  chunk_output_type: console
+---
+
+Link to GitHub Repository: 
+
+### Load libraries
+```{r warning=FALSE, message=FALSE}
+# load libraries 
+libraries = c("tidyverse", "ggplot2", "mdsr", "ggthemes")
+library_check <- lapply(libraries, FUN = function(x) {
+    if (!require(x, character.only = TRUE)) {
+      install.packages(x, dependencies = TRUE)
+      library(x, character.only = TRUE)
+    }
+  }
+)
+```
+
+### Reformat data to contain the top 10 "deadest" names and visualize as barplot
+```{r warning=FALSE, message=FALSE}
+# construct dataframe of baby names
+df_babynames <- make_babynames_dist()
+
+# wrangle data to get top 10 "deadest" names
+df_deadnames <- df_babynames %>%
+  group_by(sex, name) %>% # group data by sex and name
+  summarise(count_people_with_name = n(), # get total number of people with each name
+            total_alive_today = sum(est_alive_today), # get total number of people alive with name
+            total = sum(n)) %>% # get total number of people alive and dead with name
+  mutate(percent_dead = 1 - (total_alive_today / total)) %>% # get percent of people dead today with name
+  filter(total > 100000) %>% # filter to keep common names occuring more than 100,000 times
+  arrange(desc(percent_dead)) %>% # sort percent of people dead in descending order
+  group_by(sex) %>% # group names by sex
+  top_n(10) # get only top 10 "deadest" names for each sex
+
+# visualize barplot of top 10 "deadest" names 
+ggplot(df_deadnames, aes(x = reorder(name, percent_dead), # set x axis values
+                         y = percent_dead, # set y axis values
+                         fill = factor(sex))) + # set grouping for bar colors
+  geom_bar(stat = "identity") + # create barplot using percent_dead as statistic
+  coord_flip() + # flip coordinates
+  geom_text(aes(y = percent_dead + 0.04, # add space between bar and label
+                label = ifelse(df_deadnames$name == "Gertrude" | df_deadnames$name == "Elmer", # label bars
+                               paste0(round(df_deadnames$percent_dead * 100, 1),"%"), # have % unit for first name of sex
+                               paste0(round(df_deadnames$percent_dead * 100, 1))))) + # no unit for other names
+  scale_fill_manual(values = c("#e1ad01", "#1c86ee")) + # change colors 
+  labs(title = "Deadest Names", # add main title
+       subtitle = "Estimated percentage of Americans with a given name born since\n1900 who were dead as of Jan. 1, 2014",
+       caption = "SOURCE: SOCIAL SECURITY ADMINISTRATION",
+       x = "", y = "") + # remove x and y axis labels 
+  theme_fivethirtyeight() +  # set fivethirtyeight theme
+  theme(axis.text.x = element_blank(), # remove tick marks from x axis
+        panel.grid.major = element_blank(), # remove background grid lines
+        legend.position = "none",  # remove legend
+        plot.background = element_rect(fill = "gray95"), # change background color to grey
+        panel.background = element_rect(fill = "gray95")) # change panel background color to grey
+```
+
+
