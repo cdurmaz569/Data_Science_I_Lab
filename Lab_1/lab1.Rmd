@@ -10,7 +10,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-Link to GitHub Repository: 
+Link to GitHub Repository: https://github.com/cdurmaz569/Data_Science_I_Lab/tree/master/Lab_1
 
 ### Load libraries
 ```{r warning=FALSE, message=FALSE}
